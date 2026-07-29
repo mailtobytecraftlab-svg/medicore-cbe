@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCore CBE - Booking</title><script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+<style>body{font-family:'Inter',sans-serif}</style></head>
+<body class="bg-[#f6f5f2]">
+<div class="max-w-7xl mx-auto p-4">
+<div class="bg-white rounded-[24px] p-5 shadow-sm flex justify-between items-center">
+<div><h1 class="text-2xl md:text-3xl font-black">MediCore <span class="text-blue-600">CBE</span> <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full ml-2">● LIVE</span></h1>
+<p class="text-xs md:text-sm text-gray-500">📅 Booking Enabled • <span id="count">6</span> Hospitals</p></div>
+<button onclick="openAdd()" class="bg-black text-white px-5 md:px-7 py-3 rounded-full font-black text-sm">+ Add Hospital</button>
+</div>
+<div id="grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5"></div>
+</div>
+
+<!-- Add Hospital Modal -->
+<div id="addModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50">
+<div class="bg-white rounded-[24px] p-6 w-full max-w-md">
+<h2 class="font-black text-xl mb-4">Add Hospital</h2>
+<input id="n" placeholder="Hospital Name" class="w-full border-2 p-3 rounded-xl mb-2">
+<input id="a" placeholder="Area" class="w-full border-2 p-3 rounded-xl mb-2">
+<input id="c" placeholder="Contact 0422-xxxxxxx" class="w-full border-2 p-3 rounded-xl mb-2">
+<div class="flex gap-2"><input id="b" type="number" placeholder="Beds" class="w-1/2 border-2 p-3 rounded-xl mb-2"><input id="d" type="number" placeholder="Doctors" class="w-1/2 border-2 p-3 rounded-xl mb-2"></div>
+<input id="s" value="Online Consultation, Video Call, Cardiology" class="w-full border-2 p-3 rounded-xl mb-4">
+<div class="flex gap-2"><button onclick="closeAdd()" class="flex-1 bg-gray-100 py-3 rounded-xl font-bold">Cancel</button><button onclick="addH()" class="flex-1 bg-black text-white py-3 rounded-xl font-bold">Add</button></div>
+</div></div>
+
+<!-- BOOKING MODAL - FIXED SELECT -->
+<div id="bookModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50">
+<div class="bg-white rounded-[24px] p-6 w-full max-w-md">
+<h2 class="font-black text-xl mb-1">📅 Book Consultation</h2>
+<p class="text-sm text-gray-500 mb-4">Online Consultation - 24/7 Available</p>
+
+<label class="text-xs font-bold text-gray-600">SELECT HOSPITAL</label>
+<select id="bookHos" class="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl mb-3 font-bold text-blue-900">
+<option value="">-- Select Hospital --</option>
+</select>
+
+<input id="pName" placeholder="Your Name" class="w-full border-2 p-3 rounded-xl mb-2">
+<input id="pPhone" placeholder="Phone Number" class="w-full border-2 p-3 rounded-xl mb-2">
+<input id="pDate" type="date" class="w-full border-2 p-3 rounded-xl mb-2">
+<select id="pTime" class="w-full border-2 p-3 rounded-xl mb-4">
+<option>Morning 9AM - 12PM</option><option>Afternoon 2PM - 5PM</option><option>Evening 6PM - 9PM</option>
+</select>
+
+<div class="flex gap-2">
+<button onclick="closeBook()" class="flex-1 bg-gray-100 py-3 rounded-xl font-bold">Cancel</button>
+<button onclick="confirmBook()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold">Confirm Booking ✅</button>
+</div>
+<p id="bookSuccess" class="hidden text-green-600 font-bold text-center mt-3">✅ Booking Confirmed! Hospital will call you!</p>
+</div></div>
+
+<script>
+let hospitals = JSON.parse(localStorage.getItem('hos_final')) || [
+{name:"Ganga Hospital",area:"Mettupalayam Road",contact:"0422-2485000",beds:650,doctors:210,specs:["Orthopedics","Online Consultation"],rating:4.9},
+{name:"PSG Hospitals",area:"Peelamedu",contact:"0422-2570170",beds:1200,doctors:380,specs:["Cardiac","Online Consultation"],rating:4.7},
+{name:"Kovai Medical Center",area:"Avinashi Road",contact:"0422-4321000",beds:800,doctors:250,specs:["Cardiology","Online Consultation"],rating:4.5},
+{name:"Royal Care",area:"Neelambur",contact:"0422-2225000",beds:300,doctors:90,specs:["Online Consultation"],rating:4.8},
+{name:"Sri Ramakrishna Hospital",area:"Avarampalayam",contact:"0422-4500000",beds:1000,doctors:300,specs:["Online Consultation"],rating:4.8},
+{name:"Gem Hospital",area:"Ramanathapuram",contact:"0422-2321234",beds:250,doctors:80,specs:["Gastroenterology","Online Consultation","Video Call"],rating:4.9}
+];
+
+function render(){
+document.getElementById('count').innerText=hospitals.length;
+// Update dropdown options every render - THIS IS THE FIX
+let sel = document.getElementById('bookHos');
+sel.innerHTML = '<option value="">-- Select Hospital --</option>' + hospitals.map(h=>`<option value="${h.name}">${h.name} - ${h.area}</option>`).join('');
+
+document.getElementById('grid').innerHTML=hospitals.map(x=>`
+<div class="bg-white rounded-[24px] p-5 shadow-sm border-2 border-green-100">
+<div class="flex justify-between items-start"><h3 class="font-black text-[15px] leading-tight">${x.name}</h3><span class="text-blue-600 font-black text-sm">${x.rating} ★</span></div>
+<p class="text-xs text-gray-500 mb-2">${x.area}, Coimbatore</p>
+<div class="flex gap-1 flex-wrap mb-3">${x.specs.map(s=>`<span class="text-[10px] px-2 py-1 rounded-full font-bold ${s.toLowerCase().includes('online')?'bg-green-500 text-white':'bg-gray-100'}">${s}</span>`).join('')}</div>
+<div class="flex justify-between text-center text-[11px] my-3 text-gray-600"><div><b class="text-sm text-black">${x.beds}</b><br>Beds</div><div><b class="text-sm text-black">${x.doctors}</b><br>Doctors</div><div><b class="text-sm text-black">${x.area.split(' ')[0]}</b><br>Area</div></div>
+<button onclick="openBook('${x.name}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-full font-black mb-2">📅 Book Online Consultation</button>
+<a href="tel:${x.contact}" class="block bg-black text-white text-center py-2.5 rounded-full font-bold text-sm">📞 ${x.contact}</a>
+<p class="text-green-600 text-[11px] font-bold text-center mt-2">🟢 Online Available • 24/7</p>
+</div>`).join('');
+}
+function openAdd(){document.getElementById('addModal').classList.remove('hidden');document.getElementById('addModal').classList.add('flex');}
+function closeAdd(){document.getElementById('addModal').classList.add('hidden');}
+function openBook(hosName){
+document.getElementById('bookModal').classList.remove('hidden');document.getElementById('bookModal').classList.add('flex');
+document.getElementById('bookSuccess').classList.add('hidden');
+// Auto select hospital - FIX
+setTimeout(()=>{document.getElementById('bookHos').value=hosName;},100);
+}
+function closeBook(){document.getElementById('bookModal').classList.add('hidden');}
+function confirmBook(){
+let hos=document.getElementById('bookHos').value;
+let name=document.getElementById('pName').value;
+if(!hos){alert("Hospital select pannu da!");return;}
+if(!name){alert("Name poda da!");return;}
+document.getElementById('bookSuccess').classList.remove('hidden');
+let bookings=JSON.parse(localStorage.getItem('bookings')||"[]");
+bookings.unshift({hospital:hos,name:name,phone:document.getElementById('pPhone').value,date:document.getElementById('pDate').value,time:document.getElementById('pTime').value,at:new Date().toLocaleString()});
+localStorage.setItem('bookings',JSON.stringify(bookings));
+setTimeout(()=>{closeBook();alert("✅ Booking Done da! "+hos+" will call you!");},1500);
+}
+function addH(){
+let o={name:document.getElementById('n').value||"New Hospital",area:document.getElementById('a').value||"Coimbatore",contact:document.getElementById('c').value||"0422-0000000",beds:parseInt(document.getElementById('b').value)||100,doctors:parseInt(document.getElementById('d').value)||20,specs:document.getElementById('s').value.split(',').map(x=>x.trim()),rating:4.8};
+hospitals.unshift(o);localStorage.setItem('hos_final',JSON.stringify(hospitals));render();closeAdd();
+}
+render();
+</script>
+</body></html>
