@@ -1,0 +1,9 @@
+{
+  "name": "MediCore CBE",
+  "short_name": "MediCore",
+  "start_url": "/medicore-cbe/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2967/2967807.png", "sizes": "512x512", "type": "image/png"}]
+}
