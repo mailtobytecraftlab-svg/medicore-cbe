@@ -1,179 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MediCore CBE - Coimbatore Medical Hub</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<style>body{font-family:Inter,sans-serif}</style>
-</head>
-<body class="bg-slate-50">
-<div class="max-w-6xl mx-auto p-4">
-  <div class="bg-white rounded-2xl p-6 shadow border mb-6">
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-3xl font-extrabold text-slate-900">MediCore <span class="text-blue-600">CBE</span></h1>
-        <p class="text-sm text-slate-500">Coimbatore's Trusted Medical Network • medicore-cbe 🔥 LIVE</p>
-      </div>
-      <div class="flex items-center gap-2 text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-full border border-green-200">
-        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Firebase Connected
-      </div>
-    </div>
-    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-      <input id="search" placeholder="Search hospital, area, specialty (KG, Ganga, RS Puram...)" class="md:col-span-2 h-12 px-4 rounded-xl border border-slate-200 outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-400">
-      <button onclick="document.getElementById('addForm').classList.toggle('hidden')" class="h-12 rounded-xl bg-slate-900 text-white font-semibold hover:bg-black">+ Add Hospital</button>
-    </div>
-    <div id="addForm" class="hidden mt-6 p-5 bg-slate-50 rounded-xl border">
-      <h3 class="font-bold mb-3">Add New Coimbatore Hospital (Live to Firestore)</h3>
-      <div class="grid grid-cols-2 gap-3">
-        <input id="f_name" placeholder="Hospital Name *" class="h-10 px-3 rounded-lg border col-span-2">
-        <input id="f_area" placeholder="Area *" class="h-10 px-3 rounded-lg border">
-        <input id="f_contact" placeholder="Contact 0422-..." class="h-10 px-3 rounded-lg border">
-        <input id="f_beds" type="number" placeholder="Beds" class="h-10 px-3 rounded-lg border">
-        <input id="f_docs" type="number" placeholder="Doctors" class="h-10 px-3 rounded-lg border">
-        <input id="f_spec" placeholder="Specialties (Cardiology, Neurology)" class="col-span-2 h-10 px-3 rounded-lg border">
-      </div>
-      <button id="btnAdd" class="mt-3 w-full h-11 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">Add to Live Network →</button>
-      <p id="addStatus" class="text-xs mt-2 text-slate-500"></p>
-    </div>
-  </div>
-
-  <div id="status" class="text-center py-4 text-sm text-slate-500">Connecting to medicore-cbe.firebaseapp.com...</div>
-  <div id="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-
-  <div class="mt-8 p-6 bg-white rounded-2xl border text-center">
-    <h3 class="font-bold">Emergency SOS</h3>
-    <p class="text-xs text-slate-500 mb-3">Logs to Firestore + Calls 108</p>
-    <a href="tel:108" id="sosBtn" class="inline-flex items-center justify-center h-14 px-8 rounded-full bg-red-600 text-white font-bold text-lg shadow-lg hover:bg-red-700">🚨 EMERGENCY SOS - 108</a>
-  </div>
-
-  <div class="mt-6 text-center text-xs text-slate-400 pb-20">Built by Kshethrada Rajeshkumar • medicore-cbe.firebaseapp.com • Firebase Firestore Live • Coimbatore TN</div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD0-BbyXEEn0tV2Fpxwf8suc0D1fNCwo1A",
-  authDomain: "medicore-cbe.firebaseapp.com",
-  projectId: "medicore-cbe",
-  storageBucket: "medicore-cbe.firebasestorage.app",
-  messagingSenderId: "485788311147",
-  appId: "1:485788311147:web:906b84a1ad07b60e281b2e",
-  measurementId: "G-5Z0VJ7NJK8"
-};
-
-const SEED = [
-  { name:"KG Hospital", location:"RS Puram, Coimbatore - 641002", area:"RS Puram", beds:350, doctors:120, rating:4.8, emergencyContact:"0422-4042121", specialties:["Cardiology","Neurology","Oncology"], type:"Multi-Specialty" },
-  { name:"Ganga Hospital", location:"Mettupalayam Road, Coimbatore - 641043", area:"Mettupalayam Road", beds:650, doctors:210, rating:4.9, emergencyContact:"0422-2485000", specialties:["Orthopedics","Trauma"], type:"Super Specialty" },
-  { name:"PSG Hospitals", location:"Peelamedu, Coimbatore - 641004", area:"Peelamedu", beds:1200, doctors:380, rating:4.7, emergencyContact:"0422-2570170", specialties:["Cardiac","Transplant"], type:"Teaching Hospital" },
-  { name:"KMCH", location:"Avinashi Road, Coimbatore - 641014", area:"Avinashi Road", beds:800, doctors:250, rating:4.6, emergencyContact:"0422-4323800", specialties:["Neurosciences","Gastro"], type:"Multi-Specialty" },
-  { name:"Kovai Medical Center", location:"Kalapatti Road, Coimbatore - 641035", area:"Kalapatti", beds:300, doctors:95, rating:4.5, emergencyContact:"0422-2627781", specialties:["General Medicine","Pediatrics"], type:"Medical Center" },
-  { name:"Royal Care", location:"Neelambur, Coimbatore - 641062", area:"Neelambur", beds:500, doctors:160, rating:4.8, emergencyContact:"0422-2227000", specialties:["Oncology","Nephrology"], type:"Super Specialty" },
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCore CBE</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-50"><div class="max-w-7xl mx-auto p-4">
+<div class="bg-white rounded-2xl p-5 shadow flex justify-between items-center">
+<h1 class="text-2xl font-black">MediCore <span class="text-blue-600">CBE</span> <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">● LIVE</span></h1>
+<button onclick="document.getElementById('m').classList.remove('hidden');document.getElementById('m').classList.add('flex')" class="bg-black text-white px-6 py-3 rounded-full font-bold">+ Add Hospital</button>
+</div><div id="grid" class="grid md:grid-cols-3 gap-4 mt-5"></div></div>
+<div id="m" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50">
+<div class="bg-white rounded-2xl p-6 w-full max-w-md">
+<h2 class="font-bold text-xl mb-3">Add Hospital</h2>
+<input id="n" placeholder="Hospital Name" class="w-full border p-3 rounded-xl mb-2">
+<input id="a" placeholder="Area" class="w-full border p-3 rounded-xl mb-2">
+<input id="c" placeholder="Contact" class="w-full border p-3 rounded-xl mb-2">
+<input id="b" placeholder="Beds" type="number" class="w-full border p-3 rounded-xl mb-2">
+<input id="d" placeholder="Doctors" type="number" class="w-full border p-3 rounded-xl mb-2">
+<input id="s" value="Online Consultation, Video Call, Cardiology" class="w-full border p-3 rounded-xl mb-3">
+<button onclick="addH()" class="w-full bg-black text-white py-3 rounded-xl font-bold">Add to LIVE →</button>
+<button onclick="document.getElementById('m').classList.add('hidden')" class="w-full mt-2 bg-gray-200 py-2 rounded-xl">Cancel</button>
+</div></div>
+<script>
+let h=JSON.parse(localStorage.getItem('hos'))||[
+{name:"Ganga Hospital",area:"Mettupalayam Road",contact:"0422-2485000",beds:650,doctors:210,specs:["Orthopedics","Online Consultation"],rating:4.9},
+{name:"PSG Hospitals",area:"Peelamedu",contact:"0422-2570170",beds:1200,doctors:380,specs:["Cardiac","Online Consultation"],rating:4.7},
+{name:"Kovai Medical Center",area:"Avinashi Road",contact:"0422-4321000",beds:800,doctors:250,specs:["Cardiology","Online Consultation"],rating:4.5},
+{name:"Royal Care",area:"Neelambur",contact:"0422-2225000",beds:300,doctors:90,specs:["Online Consultation"],rating:4.8},
+{name:"Sri Ramakrishna Hospital",area:"Avarampalayam",contact:"0422-4500000",beds:1000,doctors:300,specs:["Online Consultation"],rating:4.8},
+{name:"Gem Hospital",area:"Ramanathapuram",contact:"0422-2321234",beds:250,doctors:80,specs:["Gastroenterology","Online Consultation","Video Call"],rating:4.9}
 ];
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-let allHospitals = [];
-const grid = document.getElementById('grid');
-const status = document.getElementById('status');
-const search = document.getElementById('search');
-
-function render(list){
-  grid.innerHTML = list.map(h=>`
-    <div class="bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md transition">
-      <div class="flex justify-between items-start">
-        <div>
-          <h3 class="font-bold text-slate-900">${h.name}</h3>
-          <p class="text-xs text-slate-500 mt-1">${h.location}</p>
-        </div>
-        <span class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">${h.rating} ★</span>
-      </div>
-      <div class="mt-3 flex gap-2 flex-wrap">
-        ${(h.specialties||[]).map(s=>`<span class="text-[10px] bg-slate-100 px-2 py-1 rounded-full">${s}</span>`).join('')}
-      </div>
-      <div class="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-        <div class="bg-slate-50 rounded-lg py-2"><div class="font-bold">${h.beds}</div><div class="text-slate-500">Beds</div></div>
-        <div class="bg-slate-50 rounded-lg py-2"><div class="font-bold">${h.doctors}</div><div class="text-slate-500">Doctors</div></div>
-        <div class="bg-slate-50 rounded-lg py-2"><div class="font-bold">${h.area}</div><div class="text-slate-500">Area</div></div>
-      </div>
-      <a href="tel:${h.emergencyContact}" class="mt-4 block w-full h-10 rounded-xl bg-slate-900 text-white text-sm font-semibold flex items-center justify-center gap-2">📞 ${h.emergencyContact}</a>
-    </div>
-  `).join('');
-}
-
-search.addEventListener('input', ()=>{
-  const s = search.value.toLowerCase();
-  if(!s) return render(allHospitals);
-  render(allHospitals.filter(h=> h.name.toLowerCase().includes(s) || h.area.toLowerCase().includes(s) || h.location.toLowerCase().includes(s) || (h.specialties||[]).join(' ').toLowerCase().includes(s)));
-});
-
-async function init(){
-  try{
-    await signInAnonymously(auth);
-    const col = collection(db, "hospitals_cbe");
-    const docsSnap = await getDocs(col);
-    if(docsSnap.empty){
-      status.textContent = "Seeding Coimbatore hospitals...";
-      for(const h of SEED){ await addDoc(col, {...h, createdAt: serverTimestamp()}); }
-    }
-    const q = query(col, orderBy("rating","desc"));
-    onSnapshot(q, (snap)=>{
-      allHospitals = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      render(allHospitals);
-      status.textContent = `🔥 LIVE • ${allHospitals.length} hospitals from Firestore • medicore-cbe`;
-    }, (err)=>{
-      console.error(err);
-      status.textContent = "⚠️ Firestore Rules Check: Go to Firestore > Rules > allow read, write: if true";
-      allHospitals = SEED;
-      render(allHospitals);
-    });
-  }catch(e){
-    console.error(e);
-    status.textContent = "Offline mode - showing Coimbatore data";
-    allHospitals = SEED;
-    render(allHospitals);
-  }
-}
-
-document.getElementById('btnAdd').onclick = async ()=>{
-  const name = document.getElementById('f_name').value.trim();
-  const area = document.getElementById('f_area').value.trim();
-  if(!name || !area){ alert("Name & Area required da!"); return; }
-  const payload = {
-    name,
-    area,
-    location: area + ", Coimbatore",
-    beds: parseInt(document.getElementById('f_beds').value)||100,
-    doctors: parseInt(document.getElementById('f_docs').value)||20,
-    rating: 4.5,
-    emergencyContact: document.getElementById('f_contact').value||"0422-0000000",
-    specialties: document.getElementById('f_spec').value.split(',').map(s=>s.trim()).filter(Boolean),
-    type: "Medical Center",
-    createdAt: serverTimestamp()
-  };
-  document.getElementById('addStatus').textContent = "Adding to Firestore...";
-  try{
-    await addDoc(collection(db, "hospitals_cbe"), payload);
-    document.getElementById('addStatus').textContent = "✅ Added! Live update coming...";
-    document.getElementById('f_name').value=''; document.getElementById('f_area').value='';
-    setTimeout(()=>{ document.getElementById('addForm').classList.add('hidden'); document.getElementById('addStatus').textContent=''; },1500);
-  }catch(err){
-    document.getElementById('addStatus').textContent = "❌ Error: Check Firestore Rules (allow read, write: if true)";
-    alert(err.message);
-  }
-};
-
-document.getElementById('sosBtn').onclick = async ()=>{
-  try{ await addDoc(collection(db, "emergency_logs"), {type:"SOS", time:serverTimestamp(), location:"Coimbatore"}); }catch{}
-};
-
-init();
-</script>
-</body>
-</html>
+function render(){document.getElementById('grid').innerHTML=h.map(x=>`<div class="bg-white rounded-2xl p-5 shadow border-2 border-green-100"><div class="flex justify-between"><b>${x.name}</b><span class="text-blue-600 font-bold">${x.rating} ★</span></div><p class="text-xs text-gray-500">${x.area}</p><div class="flex gap-1 flex-wrap my-2">${x.specs.map(s=>`<span class="text-[10px] px-2 py-1 rounded-full font-bold ${s.toLowerCase().includes('online')?'bg-green-500 text-white':'bg-gray-100'}">${s}</span>`).join('')}</div><div class="flex justify-between text-center text-xs my-3"><div><b>${x.beds}</b><br>Beds</div><div><b>${x.doctors}</b><br>Doctors</div><div><b>${x.area.split(' ')[0]}</b><br>Area</div></div><a href="tel:${x.contact}" class="block bg-black text-white text-center py-3 rounded-full font-bold">📞 ${x.contact}</a><p class="text-green-600 text-xs font-bold text-center mt-2">🟢 Online Consultation Available</p></div>`).join('')}
+function addH(){let o={name:document.getElementById('n').value||"New Hospital",area:document.getElementById('a').value||"Coimbatore",contact:document.getElementById('c').value||"0422-0000000",beds:parseInt(document.getElementById('b').value)||100,doctors:parseInt(document.getElementById('d').value)||20,specs:document.getElementById('s').value.split(',').map(x=>x.trim()),rating:4.8};h.unshift(o);localStorage.setItem('hos',JSON.stringify(h));render();document.getElementById('m').classList.add('hidden')}
+render();
+</script></body></html>
